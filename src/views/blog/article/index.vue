@@ -11,7 +11,7 @@
       <!-- 表格头部 -->
       <ArtTableHeader v-model:columns="columnChecks" @refresh="refresh">
         <template #left>
-          <ElButton @click="showDialog('add')">新增用户</ElButton>
+          <ElButton @click="showDialog()">发布文章</ElButton>
         </template>
       </ArtTableHeader>
 
@@ -42,18 +42,18 @@
 
 <script setup lang="ts">
   import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
-  import { ACCOUNT_TABLE_DATA } from '@/mock/temp/formData'
   import { ElMessageBox, ElMessage, ElTag } from 'element-plus'
   import { useTable } from '@/composables/useTable'
-  import { UserService } from '@/api/usersApi'
   import UserSearch from './modules/user-search.vue'
   import UserDialog from './modules/user-dialog.vue'
+  import { BlogService } from '@/api/blogApi'
+  import { router } from '@/router'
 
-  defineOptions({ name: 'SystemUser' })
+  defineOptions({ name: 'BlogArticle' })
 
   type UserListItem = Api.User.UserListItem
   const { width } = useWindowSize()
-  const { getUserList } = UserService
+  const { blogPage } = BlogService
 
   // 弹窗相关
   const dialogType = ref<Form.DialogType>('add')
@@ -64,11 +64,9 @@
   const selectedRows = ref<UserListItem[]>([])
 
   // 用户状态配置
-  const USER_STATUS_CONFIG = {
-    '1': { type: 'success' as const, text: '在线' },
-    '2': { type: 'info' as const, text: '离线' },
-    '3': { type: 'warning' as const, text: '异常' },
-    '4': { type: 'danger' as const, text: '注销' }
+  const ARTICLE_STATUS_CONFIG = {
+    true: { type: 'success' as const, text: '发布' },
+    false: { type: 'warning' as const, text: '草稿' }
   } as const
 
   /**
@@ -76,7 +74,7 @@
    */
   const getUserStatusConfig = (status: string) => {
     return (
-      USER_STATUS_CONFIG[status as keyof typeof USER_STATUS_CONFIG] || {
+      ARTICLE_STATUS_CONFIG[status as keyof typeof ARTICLE_STATUS_CONFIG] || {
         type: 'info' as const,
         text: '未知'
       }
@@ -100,11 +98,11 @@
   } = useTable<UserListItem>({
     // 核心配置
     core: {
-      apiFn: getUserList,
+      apiFn: blogPage,
       apiParams: {
-        current: 1,
-        size: 20,
-        name: '',
+        pageNumber: 1,
+        pageSize: 10,
+        title: '',
         phone: '',
         address: undefined
       },
@@ -113,29 +111,23 @@
         { type: 'index', width: 60, label: '序号' }, // 序号
         // { type: 'expand' }, // 展开列
         {
-          prop: 'avatar',
-          label: '用户名',
-          minWidth: width.value < 500 ? 220 : '',
-          formatter: (row) => {
-            return h('div', { class: 'user', style: 'display: flex; align-items: center' }, [
-              h('img', { class: 'avatar', src: row.avatar }),
-              h('div', {}, [
-                h('p', { class: 'user-name' }, row.username),
-                h('p', { class: 'email' }, row.userEmail)
-              ])
-            ])
-          }
+          prop: 'title',
+          label: '标题',
+          width: 320
         },
         {
-          prop: 'userGender',
-          label: '性别',
-          sortable: true,
-          formatter: (row) => row.userGender
+          prop: 'typeName',
+          label: '分类',
+          width: 80
         },
-        { prop: 'userPhone', label: '手机号' },
+        {
+          prop: 'summary',
+          label: '分类'
+        },
         {
           prop: 'status',
           label: '状态',
+          width: 80,
           formatter: (row) => {
             const statusConfig = getUserStatusConfig(row.status)
             return h(ElTag, { type: statusConfig.type }, () => statusConfig.text)
@@ -144,6 +136,7 @@
         {
           prop: 'createTime',
           label: '创建日期',
+          width: 120,
           sortable: true
         },
         {
@@ -155,7 +148,7 @@
             h('div', [
               h(ArtButtonTable, {
                 type: 'edit',
-                onClick: () => showDialog('edit', row)
+                onClick: () => showDialog(row)
               }),
               h(ArtButtonTable, {
                 type: 'delete',
@@ -163,25 +156,22 @@
               })
             ])
         }
-      ]
+      ],
+      paginationKey: {
+        current: 'pageNumber',
+        size: 'pageSize'
+      }
     },
     // 数据处理
     transform: {
-      // 数据转换器 - 替换头像
-      dataTransformer: (records: any) => {
-        // 类型守卫检查
-        if (!Array.isArray(records)) {
-          console.warn('数据转换器: 期望数组类型，实际收到:', typeof records)
-          return []
+      responseAdapter: (response) => {
+        // 适配自定义响应格式
+        return {
+          records: response.records,
+          total: response.totalRow,
+          current: response.pageNumber,
+          size: response.pageSize
         }
-
-        // 使用本地头像替换接口返回的头像
-        return records.map((item: any, index: number) => {
-          return {
-            ...item,
-            avatar: ACCOUNT_TABLE_DATA[index % ACCOUNT_TABLE_DATA.length].avatar
-          }
-        })
       }
     },
     // 性能优化
@@ -205,13 +195,14 @@
   /**
    * 显示用户弹窗
    */
-  const showDialog = (type: Form.DialogType, row?: UserListItem): void => {
-    console.log('打开弹窗:', { type, row })
-    dialogType.value = type
-    currentUserData.value = row || {}
-    nextTick(() => {
-      dialogVisible.value = true
-    })
+  const showDialog = (row?: UserListItem): void => {
+    router.push({ path: '/blog/article/publish', query: { id: row?.id } })
+    // console.log('打开弹窗:', { type, row })
+    // dialogType.value = type
+    // currentUserData.value = row || {}
+    // nextTick(() => {
+    //   dialogVisible.value = true
+    // })
   }
 
   /**

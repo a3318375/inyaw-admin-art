@@ -140,7 +140,7 @@
   export interface Account {
     key: AccountKey
     label: string
-    userName: string
+    username: string
     password: string
     roles: string[]
   }
@@ -149,21 +149,21 @@
     {
       key: 'super',
       label: t('login.roles.super'),
-      userName: 'Super',
+      username: 'Super',
       password: '123456',
       roles: ['R_SUPER']
     },
     {
       key: 'admin',
       label: t('login.roles.admin'),
-      userName: 'Admin',
+      username: 'Admin',
       password: '123456',
       roles: ['R_ADMIN']
     },
     {
       key: 'user',
       label: t('login.roles.user'),
-      userName: 'User',
+      username: 'User',
       password: '123456',
       roles: ['R_USER']
     }
@@ -204,7 +204,7 @@
   const setupAccount = (key: AccountKey) => {
     const selectedAccount = accounts.value.find((account: Account) => account.key === key)
     formData.account = key
-    formData.username = selectedAccount?.userName ?? ''
+    formData.username = selectedAccount?.username ?? ''
     formData.password = selectedAccount?.password ?? ''
   }
 
@@ -228,8 +228,8 @@
       // 登录请求
       const { username, password } = formData
 
-      const { token, refreshToken } = await UserService.login({
-        userName: username,
+      const token = await UserService.login({
+        username: username,
         password
       })
 
@@ -239,7 +239,7 @@
       }
 
       // 存储token和用户信息
-      userStore.setToken(token, refreshToken)
+      userStore.setToken(token)
       const userInfo = await UserService.getUserInfo()
       userStore.setUserInfo(userInfo)
       userStore.setLoginStatus(true)

@@ -25,7 +25,7 @@ const axiosInstance = axios.create({
   validateStatus: (status) => status >= 200 && status < 300, // 只接受 2xx 的状态码
   headers: {
     get: { 'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8' },
-    post: { 'Content-Type': 'application/json;charset=utf-8' }
+    post: { 'Content-Type': 'application/json;charset=utf-8' },
   },
   transformResponse: [
     (data, headers) => {
@@ -49,7 +49,7 @@ axiosInstance.interceptors.request.use(
 
     // 设置 token 和 请求头
     if (accessToken) {
-      request.headers.set('Authorization', accessToken)
+      request.headers.set('Authorization', 'bearer ' + accessToken)
       request.headers.set('Content-Type', 'application/json')
     }
 
@@ -117,7 +117,6 @@ async function request<T = any>(config: ExtendedAxiosRequestConfig): Promise<T> 
       config.params = undefined
     }
   }
-
   try {
     const res = await axiosInstance.request<Api.Http.BaseResponse<T>>(config)
     return res.data.data as T

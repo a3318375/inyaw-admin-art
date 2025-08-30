@@ -178,7 +178,7 @@
   import { useAuth } from '@/composables/useAuth'
   import { SearchFormItem } from '@/types'
 
-  defineOptions({ name: 'Menus' })
+  defineOptions({ name: 'SystemMenu' })
 
   const { hasAuth } = useAuth()
 

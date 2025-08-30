@@ -24,8 +24,10 @@
   import { useUserStore } from '@/store/modules/user'
   import { ElMessage } from 'element-plus'
   import EmojiText from '@/utils/ui/emojo'
-  import { IDomEditor, IToolbarConfig, IEditorConfig } from '@wangeditor/editor'
+  import { Boot, IDomEditor, IToolbarConfig, IEditorConfig } from '@wangeditor/editor'
+  import markdownModule from '@wangeditor/plugin-md'
 
+  Boot.registerModule(markdownModule)
   defineOptions({ name: 'ArtWangEditor' })
 
   // Props 定义

@@ -1,4 +1,9 @@
-import type { Router, RouteLocationNormalized, NavigationGuardNext } from 'vue-router'
+import type {
+  Router,
+  RouteLocationNormalized,
+  NavigationGuardNext,
+  RouteRecordRaw
+} from 'vue-router'
 import { ref, nextTick } from 'vue'
 import NProgress from 'nprogress'
 import { useSettingStore } from '@/store/modules/setting'
@@ -6,7 +11,7 @@ import { useUserStore } from '@/store/modules/user'
 import { useMenuStore } from '@/store/modules/menu'
 import { setWorktab } from '@/utils/navigation'
 import { setPageTitle, setSystemTheme } from '../utils/utils'
-import { menuService } from '@/api/menuApi'
+import { MenuService } from '@/api/menuApi'
 import { registerDynamicRoutes } from '../utils/registerRoutes'
 import { AppRouteRecord } from '@/types/router'
 import { RoutesAlias } from '../routesAlias'
@@ -15,6 +20,7 @@ import { asyncRoutes } from '../routes/asyncRoutes'
 import { loadingService } from '@/utils/ui'
 import { useCommon } from '@/composables/useCommon'
 import { useWorktabStore } from '@/store/modules/worktab'
+import { cloneDeep } from '@pureadmin/utils'
 
 // 前端权限模式 loading 关闭延时，提升用户体验
 const LOADING_DELAY = 300
@@ -158,7 +164,6 @@ async function handleDynamicRoutes(
     if (handleRootPathRedirect(to, next)) {
       return
     }
-
     next({
       path: to.path,
       query: to.query,
@@ -207,12 +212,67 @@ async function processFrontendMenu(router: Router): Promise<void> {
   await registerAndStoreMenu(router, filteredMenuList)
 }
 
+const modulesRoutes = import.meta.glob('../../views/**/*.vue')
+
 /**
  * 处理后端控制模式的菜单逻辑
  */
 async function processBackendMenu(router: Router): Promise<void> {
-  const { menuList } = await menuService.getMenuList()
-  await registerAndStoreMenu(router, menuList)
+  const menuList = await MenuService.getMenuList()
+  await registerAndStoreMenu(router, addAsyncRoutes(cloneDeep(menuList)))
+}
+
+/** 过滤后端传来的动态路由 重新生成规范路由 */
+function addAsyncRoutes(arrRoutes: Array<RouteRecordRaw>) {
+  if (!arrRoutes || !arrRoutes.length) return
+  const modulesRoutesKeys = Object.keys(modulesRoutes)
+  arrRoutes.forEach((v: RouteRecordRaw) => {
+    // 对后端传component组件路径和不传做兼容（如果后端传component组件路径，那么path可以随便写，如果不传，component组件路径会跟path保持一致）
+    const index = v?.component
+      ? modulesRoutesKeys.findIndex((ev) => ev.includes(v.component as any))
+      : modulesRoutesKeys.findIndex((ev) => ev.includes(v.path))
+    v.component = modulesRoutes[modulesRoutesKeys[index]]
+    v.meta = {}
+    if(v.icon){
+      v.meta.icon = v.icon
+    }
+    v.meta.title = v.title
+    if(v.isHide) {
+      v.meta.isHide = v.isHide
+    }
+    if(v.parentId === 0) {
+      v.component = () => import('@/views/index/index.vue')
+    }else{
+      v.meta.keepAlive = true
+    }
+    if (v?.children && v.children.length) {
+      addAsyncRoutes(v.children)
+    }
+  })
+  return arrRoutes
+}
+
+function deleteField(arrRoutes: Array<Api.Menu.MenuList>) {
+  const menuRouteList = []
+  arrRoutes.forEach((v: Api.Menu.MenuList) => {
+    const menuRoute: any = {
+      name: v.name,
+      path: v.path,
+      meta: {
+        title: v.title
+      }
+    }
+
+    if (v.parentId === 0) {
+      menuRoute.component = () => import('@/views/index/index.vue')
+    } else {
+      menuRoute.meta = {
+        keepAlive: true
+      }
+    }
+    menuRouteList.push(menuRoute)
+  })
+  return menuRouteList
 }
 
 /**

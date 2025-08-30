@@ -235,7 +235,7 @@ function handleLayoutRoute(
   converted.children = [
     {
       ...route,
-      component: loadComponent(component as string, String(route.name))
+      component: component
     } as ConvertedRoute
   ]
 }
@@ -252,6 +252,6 @@ function handleNormalRoute(
     const aliasComponent = RoutesAlias[
       component as keyof typeof RoutesAlias
     ] as unknown as RouteRecordRaw['component']
-    converted.component = aliasComponent || loadComponent(component as string, routeName)
+    converted.component = aliasComponent || component
   }
 }

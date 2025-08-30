@@ -41,7 +41,7 @@ declare namespace Api {
   namespace Auth {
     /** 登录参数 */
     interface LoginParams {
-      userName: string
+      username: string
       password: string
     }
 
@@ -57,7 +57,7 @@ declare namespace Api {
     /** 用户信息 */
     interface UserInfo {
       userId: number
-      userName: string
+      username: string
       roles: string[]
       buttons: string[]
       avatar?: string
@@ -82,12 +82,57 @@ declare namespace Api {
       updateBy: string
       updateTime: string
       status: '1' | '2' | '3' | '4' // 1: 在线 2: 离线 3: 异常 4: 注销
-      userName: string
+      username: string
       userGender: string
       nickName: string
       userPhone: string
       userEmail: string
       userRoles: string[]
+    }
+  }
+
+  namespace Menu {
+    /** 菜单 */
+    interface MenuList {
+      id?: number
+      name: string
+      path: string
+      createTime?: string
+      icon?: string
+      sort?: number
+      title?: string
+      parentId: number
+      meta?: Meta
+    }
+    interface Meta {
+      title: string
+      showParent?: boolean
+    }
+  }
+  namespace Blog {
+    /** 菜单 */
+    interface ArticleInfo {
+      id: number
+      title: string
+      cover: string
+      isComment: number
+      isHot: number
+      status: number
+      typeId: number
+      createTime: string
+      context?: string
+    }
+    interface ArticlePage {
+      records: ArticleInfo[]
+      pageNumber: number
+      pageSize: number
+      totalPage: number
+      totalRow: number
+    }
+    interface TypeInfo {
+      id: number
+      name: string
+      description: string
     }
   }
 }

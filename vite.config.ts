@@ -34,6 +34,7 @@ export default ({ mode }: { mode: string }) => {
           rewrite: (path) => path.replace(/^\/api/, '')
         }
       },
+      cors: true,
       host: true
     },
     // 路径别名
